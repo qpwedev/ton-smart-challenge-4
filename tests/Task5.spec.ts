@@ -37,9 +37,5 @@ describe('Task5', () => {
         console.log(
             stack.readTuple()
         )
-
-
-
-
     });
 });

@@ -29,8 +29,8 @@ export class Task5 implements Contract {
 
     async getFibo(provider: ContractProvider) {
         let stack = (await provider.get('fibonacci_sequence', [
-            { type: 'int', value: BigInt(201) },
-            { type: 'int', value: BigInt(4) },
+            { type: 'int', value: BigInt(370) },
+            { type: 'int', value: BigInt(1) },
 
         ])).stack;
 
