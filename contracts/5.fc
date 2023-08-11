@@ -18,6 +18,6 @@
 
 ;; testable
 (tuple) fibonacci_sequence (int n, int k) method_id {
-  return 2;
+  return 1;
 }
 
