@@ -36,14 +36,15 @@
   }
 
   tuple result = empty_tuple();
-  
+
   while (k != 0){
-    result.tpush(b);
+    result~tpush(b);
     int c = a + b;
     a = b;
     b = c;
     k = k - 1;
   }
+
 
   return result;
 }

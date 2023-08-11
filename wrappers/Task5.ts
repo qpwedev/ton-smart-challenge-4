@@ -7,7 +7,7 @@ export function task5ConfigToCell(config: Task5Config): Cell {
 }
 
 export class Task5 implements Contract {
-    constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
+    constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) { }
 
     static createFromAddress(address: Address) {
         return new Task5(address);
@@ -25,5 +25,15 @@ export class Task5 implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().endCell(),
         });
+    }
+
+    async getFibo(provider: ContractProvider) {
+        let stack = (await provider.get('fibonacci_sequence', [
+            { type: 'int', value: BigInt(201) },
+            { type: 'int', value: BigInt(4) },
+
+        ])).stack;
+
+        return stack;
     }
 }

@@ -32,7 +32,14 @@ describe('Task5', () => {
     });
 
     it('should deploy', async () => {
-        // the check is done inside beforeEach
-        // blockchain and task5 are ready to use
+        let stack = await task5.getFibo();
+
+        console.log(
+            stack.readTuple()
+        )
+
+
+
+
     });
 });
