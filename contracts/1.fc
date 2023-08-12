@@ -6,10 +6,50 @@
   this branch should be returned. Return empty cell if the branch is not found.
 -}
 
+(int) tlen (tuple t) asm "TLEN";
+
 () recv_internal() {
 }
 
 ;; testable
 (cell) find_branch_by_hash(int hash, cell tree) method_id {
+  int h =  cell_hash(tree);
+
+  if (h == hash) {
+    return tree;
+  }
+
+  tuple cells = empty_tuple();
+  slice s = tree.begin_parse();
+
+  while (s.slice_refs_empty?() != -1) {
+    cell c = s~load_ref();  
+    cells~tpush(c);
+  }
+
+  int i = 0;
+  int len = tlen(cells);
+
+  while (i < len) {
+    cell c = cells.at(i);
+
+    if (cell_hash(c) == hash) {
+      return c;
+    }
+
+    while (s.slice_refs_empty?() != -1) {
+      cell ce = s~load_ref();  
+
+      if (cell_hash(ce) == hash) {
+        return ce;
+      }
+
+      cells~tpush(c);
+    }
+
+    len = tlen(cells);
+    i = i + 1;
+  }
+
   return begin_cell().end_cell();
 }
