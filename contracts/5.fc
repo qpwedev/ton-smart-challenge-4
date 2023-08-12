@@ -18,8 +18,20 @@
 
 ;; testable
 (tuple) fibonacci_sequence (int n, int k) method_id {
+  if (
+    (n < 0) | 
+    (k < 0) | 
+    (n > 370) | 
+    (n + k > 371) | 
+    (k > 255) | 
+    (k == 0)
+    ) {
+    return empty_tuple();
+  }
+
   int a = 0;
   int b = 1;
+  tuple r = empty_tuple();
   
   if (n != 0){
     a = 1;
@@ -32,11 +44,9 @@
       i = i + 1;
     }
   } else {
-    b = 0;
+    r~tpush(a);
     k = k - 1;
   }
-
-  tuple r = empty_tuple();
 
   while (k != 0){
     r~tpush(b);
@@ -51,4 +61,3 @@
   
   return r;
 }
-
