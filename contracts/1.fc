@@ -37,8 +37,10 @@
       return c;
     }
 
-    while (s.slice_refs_empty?() != -1) {
-      cell ce = s~load_ref();  
+    slice sl = c.begin_parse();
+
+    while (sl.slice_refs_empty?() != -1) {
+      cell ce = sl~load_ref();  
 
       if (cell_hash(ce) == hash) {
         return ce;
