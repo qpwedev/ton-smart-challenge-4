@@ -23,8 +23,6 @@
   
   if (n != 0){
     a = 1;
-    b = 1;
-
     int i = 2;
 
     while (i < n){
@@ -33,12 +31,15 @@
       b = c;
       i = i + 1;
     }
+  } else {
+    b = 0;
+    k = k - 1;
   }
 
-  tuple result = empty_tuple();
+  tuple r = empty_tuple();
 
   while (k != 0){
-    result~tpush(b);
+    r~tpush(b);
     k = k - 1;
 
     if (k != 0){
@@ -46,10 +47,8 @@
       a = b;
       b = c;
     }
-    
   }
-
-
-  return result;
+  
+  return r;
 }
 
