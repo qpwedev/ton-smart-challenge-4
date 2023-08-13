@@ -6,51 +6,42 @@
   this branch should be returned. Return empty cell if the branch is not found.
 -}
 
-(int) tlen (tuple t) asm "TLEN";
+forall X -> int is_null (X x) asm "ISNULL";
+forall X -> (tuple, ()) push_back (tuple tail, X head) asm "CONS";
+forall X -> (tuple, (X)) pop_back (tuple t) asm "UNCONS";
+
 
 () recv_internal() {
 }
 
 ;; testable
 (cell) find_branch_by_hash(int hash, cell tree) method_id {
-  int h =  cell_hash(tree);
+  int root_hash =  cell_hash(tree);
 
-  if (h == hash) {
+  if (root_hash == hash) {
     return tree;
   }
 
-  tuple cells = empty_tuple();
-  slice s = tree.begin_parse();
+  tuple cells = null();
+  cells~push_back(tree);
 
-  while (s.slice_refs_empty?() != -1) {
-    cell c = s~load_ref();  
-    cells~tpush(c);
-  }
+  while (~ cells.is_null()){
+    cell current_cell = cells~pop_back();
 
-  int i = 0;
-  int len = tlen(cells);
-
-  while (i < len) {
-    cell c = cells.at(i);
-
-    if (cell_hash(c) == hash) {
-      return c;
+    if (cell_hash(current_cell) == hash) {
+      return current_cell;
     }
 
-    slice sl = c.begin_parse();
+    slice current_cell_slice = current_cell.begin_parse();
+    repeat (current_cell_slice.slice_refs()){
+      cell current_cell_ref = current_cell_slice~load_ref();
 
-    while (sl.slice_refs_empty?() != -1) {
-      cell ce = sl~load_ref();  
-
-      if (cell_hash(ce) == hash) {
-        return ce;
+      if (cell_hash(current_cell_ref) == hash) {
+        return current_cell_ref;
       }
 
-      cells~tpush(c);
+      cells~push_back(current_cell_ref);
     }
-
-    len = tlen(cells);
-    i = i + 1;
   }
 
   return begin_cell().end_cell();
