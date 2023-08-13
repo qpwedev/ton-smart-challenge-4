@@ -18,33 +18,23 @@ int tuple_length (tuple t) asm "TLEN";
 (tuple) matrix_multiplier(tuple matrixA, tuple matrixB) method_id {
   int matrixA_rows = matrixA.tuple_length();
   int matrixA_cols = matrixA.at(0).tuple_length();
-
-  int matrixB_rows = matrixB.tuple_length();
   int matrixB_cols = matrixB.at(0).tuple_length();
-
-
-  if (matrixA_cols != matrixB_rows) {
-    return null();
-  }
 
   tuple result = empty_tuple();
 
   int i = 0;
   repeat (matrixA_rows){
-
     tuple row = empty_tuple();
-
     int j = 0;
+
     repeat (matrixB_cols){
-
       int sum = 0;
-
       int k = 0;
+
       repeat(matrixA_cols){
         sum += matrixA.at(i).at(k) * matrixB.at(k).at(j);
         k += 1;
       }
-
       row~tpush(sum);
       j += 1;
     }
