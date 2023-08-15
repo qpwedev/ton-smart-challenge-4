@@ -14,7 +14,7 @@ forall X -> (tuple, (X)) pop_back (tuple t) asm "UNCONS";
 () recv_internal() {
 }
 
-(cell) translate_cell(int shift, cell text, int first_cell){
+(cell) translate_cell(int shift, cell text, int first_cell) impure {
   slice text_slice = text.begin_parse();
   builder root_builder = begin_cell();
 
