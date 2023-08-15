@@ -25,14 +25,31 @@ forall X -> (tuple, (X)) pop_back (tuple t) asm "UNCONS";
 
   repeat(slice_bits(text_slice) / 8){
     int char = text_slice~load_int(8);
+
     int new_char = char + shift;
 
-    if (new_char > 255){
-      new_char = new_char - 255;
+    if (~ (((char >= 65) & (char <= 90)) | ((char >= 97) & (char <= 122)))){
+      new_char = char;
     }
 
-    if (new_char < 0){
-      new_char = 255 + new_char;
+    if ((char >= 65) & (char <= 90)){
+      if (new_char > 90){
+        new_char = 64 + (new_char - 90);
+      } 
+      
+      if (new_char < 65){
+        new_char = 91 - (65 - new_char);
+      }
+    } 
+    
+    if ((char >= 97) & (char <= 122)){
+      if (new_char > 122){
+        new_char = 96 + (new_char - 122);
+      } 
+      
+      if (new_char < 97){
+        new_char = 123 - (97 - new_char);
+      }
     }
 
     root_builder~store_int(new_char, 8);
