@@ -14,7 +14,7 @@ forall X -> (tuple, (X)) pop_back (tuple t) asm "UNCONS";
 () recv_internal() {
 }
 
-(cell) translate_cell(int shift, cell text, int first_cell) inline {
+(cell) translate_cell(int shift, cell text, int first_cell) impure {
   slice text_slice = text.begin_parse();
   builder root_builder = begin_cell();
 
@@ -68,7 +68,7 @@ forall X -> (tuple, (X)) pop_back (tuple t) asm "UNCONS";
 ;; testable
 (cell) caesar_cipher_encrypt(int shift, cell text) method_id {
   return translate_cell(
-    shift,
+    (shift % 26),
     text,
     1
   );
@@ -77,7 +77,7 @@ forall X -> (tuple, (X)) pop_back (tuple t) asm "UNCONS";
 ;; testable
 (cell) caesar_cipher_decrypt(int shift, cell text) method_id {
   return translate_cell(
-    -1 * shift,
+    -1 * (shift % 26),
     text,
     1
   );
