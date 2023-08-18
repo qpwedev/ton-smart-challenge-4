@@ -19,116 +19,120 @@
 forall X -> int is_null (X x) asm "ISNULL";
 forall X -> (tuple, ()) push_back (tuple tail, X head) asm "CONS";
 forall X -> (tuple, (X)) pop_back (tuple t) asm "UNCONS";
-forall X -> (tuple, X) list_next(tuple list) asm( -> 1 0) "UNCONS";
 forall X -> int is_null (X x) asm "ISNULL";
+(int) log2(int x) asm "UBITSIZE DEC";
+int tuple_length (tuple t) asm "TLEN";
+(int) ubits(int v) asm "UBITSIZE";
+
 
 () recv_internal() {
 }
 
-(int) log2(int x) asm "UBITSIZE DEC";
-
-(cell, int) int_to_string(int number) method_id {
-  int number_of_bits = log2(number) + 1;
-  builder string = begin_cell();
-
-  string~store_uint(number, number_of_bits);
-
-  cell result = string.end_cell();
-  return (result, number_of_bits);
-}
-
-int are_cells_equal?(cell a, cell b) {
-    return a.cell_hash() == b.cell_hash();
-}
-
-(tuple, int) store_full_linked_list(cell linked_list){
-  tuple full_linked_list = null();
-
-  int length = 0;
-
-  full_linked_list~push_back(linked_list);
-
-
-  slice current_cell_slice = linked_list.begin_parse();
-
-
-  length += slice_bits(current_cell_slice);
-
-  repeat (current_cell_slice.slice_refs()){
-      cell next_cell = current_cell_slice~load_ref();
-
-      full_linked_list~push_back(next_cell);
-
-      current_cell_slice = next_cell.begin_parse();
-
-      length += slice_bits(current_cell_slice);
-  }
-
-  return (full_linked_list, length);
-}
-
-
-tuple reverse_tuple(tuple t) impure {
-  tuple r = null();
-
-  while (~ t.is_null()){
-    r~push_back(t~pop_back());
-  }
-
-  return r;
-}
-
-
-int atc(tuple full_cell_list, int index) impure {
-  int i = 0;
-  while (~ full_cell_list.is_null()){
-    slice current_cell_slice = full_cell_list~pop_back().begin_parse();
-
-    repeat (slice_bits(current_cell_slice)) {
-      if (i == index) {
-        return current_cell_slice~load_uint(1);
-      }
-      current_cell_slice~load_uint(1);
-      i += 1;
-    }
-  }
-
-  return -1;
-}
 
 ;; testable
-(cell) find_and_replace(int flag, int value, cell linked_list) method_id {
-  (cell flag_cell, int flag_number_of_bits) = int_to_string(flag);
-  (cell value_cell, int value_number_of_bits) = int_to_string(value);
-  (tuple full_linked_list, int full_length) = store_full_linked_list(linked_list);
+(cell) find_and_replace(int target_flag, int replace_val, cell list_cell) method_id {
+    int target_flag_len = ubits(target_flag);
+    int replace_val_len = ubits(replace_val);
 
-  full_linked_list = full_linked_list.reverse_tuple();
 
-  tuple result = null();
-  int i = 0;
-  while (i < full_length - value_number_of_bits + 1) {
-    int j = i;
+    slice list_slice = list_cell.begin_parse();
+    cell next_cell = null();
+    if (~ list_slice.slice_refs_empty?()) {
+        next_cell = list_slice~load_ref();
+    }
+    (int bit_data, int slice_bits, int slice_refs) = list_slice.slice_compute_data_size(1);
 
-    builder current_sub_string = begin_cell(); 
-    
+    tuple cell_builders = empty_tuple();
+    builder cell_builder = begin_cell();
 
-    repeat (flag_number_of_bits) {
-      current_sub_string~store_uint(full_linked_list.atc(j), 1);
-      j = j + 1;
+    int current_bit_str = 0;
+    int recent_update = 0;
+    int bits_post_flag = 0;
+    int max_uint_len = 127;
+    int bit_mask_127 = (1 << 127) - 1;
+    int bit_mask_255 = (1 << 255) - 1;
+    int mask_flag = (1 << target_flag_len) - 1;
+
+    int available_bits = 1023;
+    while (~ list_slice.is_null()) {
+        (bit_data, slice_bits, slice_refs) = list_slice.slice_compute_data_size(1);
+        repeat (slice_bits) {
+            current_bit_str &= bit_mask_255;
+            current_bit_str <<= 1;
+            current_bit_str |= list_slice~load_uint(1);
+            recent_update += 1; 
+            if (bits_post_flag < target_flag_len) {
+                bits_post_flag += 1;
+            }
+
+            if ((current_bit_str & mask_flag) == target_flag) {         
+                if (available_bits < recent_update - bits_post_flag) {
+                    cell_builders~tpush(cell_builder);
+                    cell_builder = begin_cell();
+                    available_bits = 1023;
+                }
+                cell_builder~store_uint(
+                  (current_bit_str >> bits_post_flag) & 
+                  ((1 << (recent_update - bits_post_flag)) - 1), 
+                  recent_update - bits_post_flag
+                );
+                available_bits -= (recent_update - bits_post_flag);
+
+                if (available_bits < replace_val_len) {
+                    cell_builders~tpush(cell_builder);
+                    cell_builder = begin_cell();
+                    available_bits = 1023;
+                }
+                cell_builder~store_uint(replace_val, replace_val_len);
+                available_bits -= replace_val_len;
+
+                recent_update = 0; 
+                current_bit_str = 0;
+                bits_post_flag = 0;
+            }
+            if (recent_update == max_uint_len + bits_post_flag) {
+                if (available_bits < max_uint_len) {
+                    cell_builders~tpush(cell_builder);
+                    cell_builder = begin_cell();
+                    available_bits = 1023;
+                }
+                cell_builder~store_uint((current_bit_str >> bits_post_flag) & bit_mask_127, max_uint_len);
+                available_bits -= max_uint_len;
+                recent_update = bits_post_flag;
+            }
+        }
+
+        if (next_cell.is_null()) {
+            list_slice = null();
+        }
+        else {
+            list_slice = next_cell.begin_parse();
+            if (~ list_slice.slice_refs_empty?()) {
+                next_cell = list_slice~load_ref();
+            } 
+            else {
+                next_cell = null();
+            }
+        }
     }
 
-
-    cell new_cell = current_sub_string.end_cell();
-
-    slice new_cell_slice = new_cell.begin_parse();
-
-    if (are_cells_equal?(new_cell, flag_cell)) {
-      result~push_back(i);
-      i += flag_number_of_bits - 1;
+    if (recent_update != 0) {
+        if (available_bits < recent_update) {
+            cell_builders~tpush(cell_builder);
+            cell_builder = begin_cell();
+        }
+        cell_builder~store_uint(current_bit_str & ((1 << recent_update) - 1), recent_update);
     }
 
-    i += 1;
-  }
+    builder temp_builder_1 = cell_builder;
+    builder temp_builder_2 = begin_cell();
+    int idx = cell_builders.tuple_length() - 1;
+    while (idx >= 0) {
+        temp_builder_2 = cell_builders.at(idx);
+        temp_builder_2 = temp_builder_2.store_ref(temp_builder_1.end_cell());
+        temp_builder_1 = temp_builder_2;
+        idx -= 1;
+    }
 
-  return begin_cell().store_uint(flag, flag_number_of_bits).store_uint(value, flag_number_of_bits).store_ref(linked_list).end_cell();
+    return temp_builder_1.end_cell(); 
 }
